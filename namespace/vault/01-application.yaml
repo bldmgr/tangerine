@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hcvault
+  namespace: argocd 
+spec:
+  project: default
+  source:
+    chart: hashicorp/vault
+    repoURL: https://helm.releases.hashicorp.com
+    targetRevision: HEAD
+    helm:
+      server:
+        dev:
+          enabled: true
+      ui: 
+        enabled: true
+        serviceType: "LoadBalancer" 
+            
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault  
+---
