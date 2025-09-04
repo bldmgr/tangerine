@@ -1,0 +1,101 @@
+---
+# Source: container-agent/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bldmgr-container-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bldmgr-container-agent
+  template:
+    metadata:
+      labels:
+        app: bldmgr-container-agent
+      annotations:
+        checksum/config: 52133ddfcd583280388a8bbfb67a417b6b660f75bc63ec1b01beec811d4498ef
+    spec:
+      serviceAccountName: cloud-container-agent
+      terminationGracePeriodSeconds: 18300
+      volumes:
+        - name: taskpod-config-bldmgr
+          configMap:
+            name: bldmgr-container-agent
+      containers:
+        - name: bldmgr-container-agent
+          image: "circleci/runner-agent:kubernetes-3"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: taskpod-config-bldmgr
+              mountPath: /etc/bldmgr-container-agent
+          env:
+            - name: RUNNER_API
+              value: https://circleci.aws.mysitedeploy.com
+            - name: AGENT_NAME
+              value: bldmgr-container-agent
+            - name: MAX_RUN_TIME
+              value: 5h
+            - name: MAX_CONCURRENT_TASKS
+              value: "20"
+            - name: CHECK_ENABLED
+              value: "false"
+            - name: CHECK_THRESHOLD
+              value: "3"
+            - name: CHECK_INTERVAL
+              value: "15m"
+            - name: KUBE_NAMESPACE
+              value: "resource"
+            - name: KUBE_TASK_POD_CONFIG
+              value: /etc/bldmgr-container-agent/taskpods
+            - name: KUBE_TOKEN_SECRETS
+              value: bldmgr-container-runner-container-agent
+            - name: KUBE_LOGGING_IMAGE
+              value: "circleci/logging-collector:3"
+            - name: KUBE_LOGGING_SECRET
+              value: "logging-collector-token"
+            - name: KUBE_AUTODETECT_PLATFORM
+              value: "true"
+            # Agent logging settings
+            - name: O11Y_LEVEL
+              value: "info"
+            - name: O11Y_FORMAT
+              value: "json"
+            - name: KUBE_CONTAINER_AGENT_INSTANCE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+
+            # GC configuration settings
+            - name: KUBE_GC_ENABLED
+              value: "true"
+            - name: KUBE_GC_THRESHOLD
+              value: "5h5m"
+            - name: KUBE_GC_INTERVAL
+              value: "3m"
+            # Settings for the orchestrator init container # if .Values.agent.ssh.enabled
+
+          livenessProbe: 
+            failureThreshold: 5
+            httpGet:
+              path: /live
+              port: 7623
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe: 
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: 7623
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+---
+# Source: container-agent/templates/ssh.yaml
+# if .Values.agent.ssh.enabled

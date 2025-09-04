@@ -1,0 +1,73 @@
+---
+# Source: dagger-helm/templates/engine-daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dagger-dagger-helm-engine
+  namespace: default
+  labels:
+    helm.sh/chart: dagger-helm-0.18.17
+    app.kubernetes.io/name: dagger-helm
+    app.kubernetes.io/instance: dagger
+    app.kubernetes.io/version: v0.18.17
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: dagger-helm
+spec:
+  selector:
+    matchLabels:
+      name: dagger-dagger-helm-engine
+  template:
+    metadata:
+      labels:
+        name: dagger-dagger-helm-engine
+        helm.sh/chart: dagger-helm-0.18.17
+        app.kubernetes.io/name: dagger-helm
+        app.kubernetes.io/instance: dagger
+        app.kubernetes.io/version: v0.18.17
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/part-of: dagger-helm
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: "OnRootMismatch"
+      serviceAccountName: default
+      containers:
+        - name: dagger-engine
+          image: registry.dagger.io/engine:v0.18.17
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - ALL
+          resources:
+            limits: {}
+            requests: {}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -exc
+                - |-
+                  dagger core version
+            failureThreshold: 10
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 14
+          lifecycle:
+          volumeMounts:
+            - name: varlibdagger
+              mountPath: /var/lib/dagger
+            - name: varrundagger
+              mountPath: /run/dagger
+      terminationGracePeriodSeconds: 300
+      volumes:
+        - name: varlibdagger
+          hostPath:
+            path: /var/lib/dagger-dagger-dagger-helm
+        - name: varrundagger
+          hostPath:
+            path: /run/dagger-dagger-dagger-helm

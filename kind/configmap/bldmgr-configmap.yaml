@@ -1,0 +1,10 @@
+---
+# Source: container-agent/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bldmgr-container-agent
+data:
+  taskpods: |
+    resourceClasses:
+      bldmgr.k8s:
